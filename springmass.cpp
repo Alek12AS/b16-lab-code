@@ -5,6 +5,7 @@
 
 #include "springmass.h"
 
+#include <cmath>
 #include <iostream>
 
 /* ---------------------------------------------------------------- */
@@ -59,7 +60,7 @@ double Mass::getEnergy(double gravity) const
 {
   double energy = 0 ;
 
-/* INCOMPLETE: TYPE YOUR CODE HERE */
+  energy = mass*gravity*position.y + 0.5*mass*std::pow(velocity.norm2(),2) ;
 
   return energy ;
 }
@@ -67,7 +68,9 @@ double Mass::getEnergy(double gravity) const
 void Mass::step(double dt)
 {
 
-/* INCOMPLETE: TYPE YOUR CODE HERE */
+position = position + velocity*dt ;
+
+velocity = velocity + force/mass*dt ;
 
 }
 
@@ -92,11 +95,16 @@ Mass * Spring::getMass2() const
 
 Vector2 Spring::getForce() const
 {
-  Vector2 F ;
+  double ell = getLength() ;
 
-/* INCOMPLETE: TYPE YOUR CODE HERE */
+  Vector2 u_12 = 1/ell*(mass2->getPosition() - mass1->getPosition()) ;
+  Vector2 v_12 = u_12 * dot((mass2->getVelocity() - mass1->getVelocity()),u_12);
+  
+  Vector2 F_k = u_12 * stiffness * (ell - naturalLength) ;
 
-  return F ;
+  Vector2 F_d = v_12 * damping ;
+
+  return (F_k + F_d) ;
 }
 
 double Spring::getLength() const
@@ -110,6 +118,7 @@ double Spring::getEnergy() const {
   double dl = length - naturalLength;
   return 0.5 * stiffness * dl * dl ;
 }
+
 
 std::ostream& operator << (std::ostream& os, const Mass& m)
 {
@@ -128,14 +137,16 @@ std::ostream& operator << (std::ostream& os, const Spring& s)
 // class SpringMass : public Simulation
 /* ---------------------------------------------------------------- */
 
-SpringMass::SpringMass(double gravity)
-: gravity(gravity)
+SpringMass::SpringMass(Spring * spring1, Mass * mass1, Mass * mass2,double gravity)
+: gravity(gravity), spring1(spring1), mass1(mass1), mass2(mass2)
 { }
 
 void SpringMass::display()
 {
 
-/* INCOMPLETE: TYPE YOUR CODE HERE */
+
+std::cout << *mass1 << " " << *mass2 << std::endl ;
+
 
 }
 
@@ -152,7 +163,16 @@ void SpringMass::step(double dt)
 {
   Vector2 g(0,-gravity) ;
 
-/* INCOMPLETE: TYPE YOUR CODE HERE */
+  mass1->setForce(g) ;
+  mass2->setForce(g) ;
+
+  Vector2 F_plus = spring1->getForce() ;
+
+  mass1->addForce(F_plus) ;
+  mass2->addForce(F_plus*-1) ;
+
+  mass1->step(dt) ;
+  mass2->step(dt) ;
 
 }
 
