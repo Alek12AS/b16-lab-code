@@ -137,15 +137,20 @@ std::ostream& operator << (std::ostream& os, const Spring& s)
 // class SpringMass : public Simulation
 /* ---------------------------------------------------------------- */
 
-SpringMass::SpringMass(Spring * spring1, Mass * mass1, Mass * mass2,double gravity)
-: gravity(gravity), spring1(spring1), mass1(mass1), mass2(mass2)
-{ }
+SpringMass::SpringMass(Mass **masses, Spring **springs,int m, int n, double gravity):
+springs(springs), masses(masses), m(m), n(n)
+{}
 
 void SpringMass::display()
 {
 
+for (int i(0); i < n; ++i) {
 
-std::cout << *mass1 << " " << *mass2 << std::endl ;
+  std::cout << **(masses + i) << " " ;
+
+} ;
+
+std::cout << std::endl ;
 
 
 }
@@ -163,16 +168,23 @@ void SpringMass::step(double dt)
 {
   Vector2 g(0,-gravity) ;
 
-  mass1->setForce(g) ;
-  mass2->setForce(g) ;
+  for (int i(0); i < n; ++i) {
 
-  Vector2 F_plus = spring1->getForce() ;
+    Mass *mass1 = (*(springs + i)) -> getMass1() ;
+    Mass *mass2 = (*(springs + i)) -> getMass2() ;
 
-  mass1->addForce(F_plus) ;
-  mass2->addForce(F_plus*-1) ;
+    mass1 -> setForce(g) ;
+    mass2 -> setForce(g) ;
 
-  mass1->step(dt) ;
-  mass2->step(dt) ;
+    Vector2 F_plus = (*(springs+i))->getForce() ;
+
+    mass1 -> addForce(F_plus)  ;
+    mass2 -> addForce(F_plus*-1)  ;
+
+    mass1->step(dt) ;
+    mass2->step(dt) ;
+
+  }
 
 }
 
