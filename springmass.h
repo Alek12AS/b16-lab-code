@@ -1,8 +1,3 @@
-/** file: springmass.h
- ** brief: SpringMass simulation
- ** author: Andrea Vedaldi
- **/
-
 #ifndef __springmass__
 #define __springmass__
 
@@ -42,7 +37,20 @@ inline double dot(Vector2 a, Vector2 b) { return a.x*b.x + a.y*b.y ; }
 /* ---------------------------------------------------------------- */
 
 class Mass
+
 {
+
+/*
+ * Constructor Parameters:
+ * Position = position of the mass in space
+ * Velocity = velocity of the mass
+ * mass     = physical mass of the object
+ * radius   = radius of the mass
+ * 
+ * Overview:
+ * Class represents a circular/spherical mass with attributes relevant to its dynamics
+ */
+
 public:
   Mass() ;
   Mass(Vector2 position, Vector2 velocity, double mass, double radius) ;
@@ -75,6 +83,18 @@ protected:
 
 class Spring
 {
+
+/*
+ * Constructor Parameters:
+ * Mass1 = First mass connected to the spring
+ * Mass2 = Second mass connected
+ * naturalLength = natural length of spring
+ * stiffness = Hooke's consant or elastic modulus
+ * damping = Damping factor
+ * 
+ * Overview: Spring class allowing for calculation of the forces
+ */
+
 public:
   Spring(Mass * mass1, Mass * mass2, double naturalLength, double stiff, double damping = 0.01) ;
   Mass * getMass1() const ;
@@ -96,17 +116,26 @@ protected:
 // class SpringMass : public Simulation
 /* ---------------------------------------------------------------- */
 
+
 class SpringMass : public Simulation
+
 {
+
+/*
+ * Constructor Parameters:
+ * Spring1  = the spring connecting the two masses
+ * Mass1    = first mass
+ * Mass2    = second mass
+ * gravity  = gravitational acceleration, set as earth graphity by default
+ * 
+ * Overview:
+ * Reprents the universe comprising of two masses and one spring
+*/
 public:
   SpringMass(Mass **masses, Spring **springs,int m ,int n , double gravity = MOON_GRAVITY) ;
   void step(double dt) ;
   void display() ;
   double getEnergy() const ;
-
-
-/* INCOMPLETE: TYPE YOUR CODE HERE */
-
 
 protected:
   Spring **springs ;

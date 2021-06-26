@@ -1,272 +1,134 @@
-/** file: graphics.cpp
- ** brief: Graphic helpers implementation
- ** author: Andrea Vedaldi
- **/
 
 #include "graphics.h"
+#include "iostream"
+#define PI 3.14159265f
 
-#include <cassert>
-#include <cmath>
-#include <iostream>
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
+Figure * figure;
 
-#include <tgmath.h>
-
-typedef std::vector<Figure*> figures_t ;
-figures_t figures ;
-
-/* ---------------------------------------------------------------- */
-// class Drawable
-/* ---------------------------------------------------------------- */
-
-void Drawable::draw()
-{}
-
-/* ---------------------------------------------------------------- */
-// class Figure : public Drawable
-/* ---------------------------------------------------------------- */
-
-Figure::Figure(std::string name)
- : xmin(-1), xmax(1), ymin(-1), ymax(1), glGrid(0), glCircle(0)
-{
-  glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-  glutInitWindowPosition(128,128);
-  glutInitWindowSize(320,256);
-  id = glutCreateWindow(name.c_str()) ;
-
-  // snychronise buffer swapping with OpenGL
-  // also limits the frame rate to the one o the scren
-#if defined(__APPLE__)
-  int swap_interval = 1;
-  // CGLContextObj cgl_context = CGLGetCurrentContext();
-  // CGLSetParameter(cgl_context, kCGLCPSwapInterval, &swap_interval);
-#endif
-
-  updateGrid() ;
-
-  figures.push_back(this) ;
-  glutDisplayFunc(Figure::handleDisplay) ;
-  glutReshapeFunc(Figure::handleReshape) ;
+/* Initialize OpenGL Graphics */
+void Figure::initGL() {
+  // Set "clearing"/background color
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and Opaque
 }
 
-// A display list to show the grid
-void Figure::updateGrid()
-{
-  if (glGrid) {
-    glDeleteLists(glGrid,1) ;
-  }
-
-  glGrid = glGenLists(1) ;
-  glNewList(glGrid, GL_COMPILE) ;
-  double x, y ;
-  std::stringstream sstr ;
-  glColor3f(0.8f, 0.8f, 0.8f);
-  for (x = xmin ; x <= xmax ; x += (xmax-xmin)/10.0) {
-    x = round(x * 10.0) / 10.0 ;
-    glBegin(GL_LINES) ;
-    glVertex2d(x,-1) ;
-    glVertex2d(x,+1) ;
-    glEnd() ;
-    sstr.str("") ;
-    sstr<<std::fixed
-		<<std::setprecision(1)<<x;
-    drawString(x+2*pixelSize,2*pixelSize,sstr.str()) ;
-  }
-  for (y = ymin ; y <= ymax ; y += (ymax-ymin)/10.0) {
-    y = round(y * 10.0) / 10.0 ;
-    glBegin(GL_LINES) ;
-    glVertex2d(-1,y) ;
-    glVertex2d(1,y) ;
-    glEnd() ;
-    sstr.str("") ;
-    sstr<<std::fixed
-		<<std::setprecision(1)<<y;
-    drawString(2*pixelSize,y+2*pixelSize,sstr.str()) ;
-  }
-  glEndList() ;
+/* Called back when timer expired */
+void Figure::Timer(int value) {
+  glutPostRedisplay();                           // Post a re-pain request to activate display()
+  glutTimerFunc(figure -> dt, Figure::Timer, 0); // next Timer call milliseconds later
 }
 
 
-Figure::~Figure()
-{
-  if (glCircle) glDeleteLists(glCircle, 1) ;
-  if (glGrid) glDeleteLists(glGrid, 1) ;
-  glutDestroyWindow(id) ;
-  figures.erase(std::remove(figures.begin(), figures.end(), this), figures.end());
+Figure::Figure(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt):
+springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt) {
+
+  figure = this; 
+  glutInitDisplayMode(GLUT_DOUBLE);                 // Enable double buffered mode
+  glutInitWindowSize(640, 480);                     // Set the window's initial width & height - non-square
+  glutInitWindowPosition(50, 50);                   // Position the window's initial top-left corner
+  glutCreateWindow("Masses Connected by Springs");  // Create window with the given title
+  glutDisplayFunc(display);                         // Register callback handler for window re-paint event
+  glutReshapeFunc(reshape);                         // Register callback handler for window re-size event
+  glutTimerFunc(0, Timer, 0);                       // First timer call immediately
+  initGL();                                         // Our own OpenGL initialization
+  glutMainLoop();                                   // Enter infinite event loop
+
 }
 
-void Figure::addDrawable(Drawable * object) {
-	Figure::objects_t::iterator iter = std::find(objects.begin(), objects.end(), object) ;
-  if (iter == objects.end()) {
-    objects.push_back(object) ;
-  }
-}
+void Figure::drawCircle(GLfloat x, GLfloat y, GLfloat radius) {
+/* 
+ * Draw a circle at position (x,y) of a given radius
+ */
 
-void Figure::removeDrawables(Drawable * object) {
-	Figure::objects_t::iterator  iter = std::find(objects.begin(), objects.end(), object) ;
-  if (iter != objects.end()) {
-    objects.erase(iter) ;
-  }
-}
+  glMatrixMode(GL_MODELVIEW);     // Select the the model-view matrix
+  glLoadIdentity();               // Reset the matrix
 
-Figure * Figure::findByWindowId(int id)
-{
-  for(figures_t::iterator iter = figures.begin() ;
-      iter != figures.end() ;
-      ++ iter) {
-    if ((*iter)->id == id) return (*iter) ;
-  }
-  return NULL ;
-}
-
-void Figure::handleDisplay() {
-  int id = glutGetWindow() ;
-  Figure * figure = Figure::findByWindowId(id) ;
-  if (! figure) return ;
-  figure->draw() ;
-}
-
-void Figure::handleReshape(int width, int height)
-{
-  int id = glutGetWindow() ;
-  Figure * figure = Figure::findByWindowId(id) ;
-  if (! figure) return ; // probably deleted but still messages in queue
-  figure->windowWidth = width ;
-  figure->windowHeight = height ;
-  figure->reshape(width, height) ;
-}
-
-void Figure::makeCurrent() const
-{
-  if (glutGetWindow() != id) {
-    glutSetWindow(id) ;
-  }
-}
-
-void Figure::reshape(int width, int height)
-{
-  makeCurrent() ;
-  if (windowWidth != width ||
-      windowHeight != height) {
-    glutReshapeWindow(width,height) ;
-  }
-  double aspect = (double)width/height ;
-  double x0 = (xmin + xmax)/ 2.0 ;
-  double ysize = ymax - ymin ;
-  pixelSize = ysize / height;
-  glViewport(0, 0, width, height);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  // gluOrtho2D(-aspect*ysize/2+x0,aspect*ysize/2+x0,ymin,ymax) ;
-  updateGrid() ;
-  glutPostRedisplay() ;
-}
-
-void Figure::update() const
-{
-  makeCurrent() ;
-  glutPostRedisplay() ;
-}
-
-void Figure::draw()
-{
-  makeCurrent() ;
-  glClearColor(1.0, 1.0, 1.0, 1.0) ;
-  glClear(GL_COLOR_BUFFER_BIT);
-  glCallList(glGrid) ;
-
-  for(Figure::objects_t::iterator iter = objects.begin() ;
-      iter != objects.end() ;
-      ++iter) {
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    (*iter)->draw() ;
-  }
-
-  glutSwapBuffers();
-}
-
-void Figure::drawString(double x, double y, std::string str)
-{
-  glRasterPos2f(x, y);
-  for (char const * cstr = str.c_str() ;
-       *cstr ;
-       ++cstr) {
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, *cstr);
-  }
-}
-
-void Figure::drawLine(double x1, double y1, double x2, double y2, double thickness)
-{
-  glPushMatrix() ;
-  glPushAttrib(GL_LINE_BIT) ;
-  glLineWidth(thickness) ;
-  glBegin(GL_LINES) ;
-  glVertex2d(x1, y1) ;
-  glVertex2d(x2, y2) ;
-  glEnd() ;
-  glPopAttrib() ;
-}
-
-void Figure::drawCircle(double x, double y, double r)
-{
-  if (glCircle == 0) {
-    glCircle = glGenLists(1) ;
-    glNewList(glCircle, GL_COMPILE) ;
-    glBegin(GL_TRIANGLE_FAN);
-    glColor3d(0,0,1) ;
-    glVertex2d(0,0) ;
-    int numSegments = 128;
-    for (int i = 0; i <= numSegments; i++) {
-      double angle = i * 2.0 * 3.1468 / numSegments;
-      glVertex2d(std::cos(angle),
-                 std::sin(angle));
+  glPushMatrix();                 // Save the current state before performing operations
+  glTranslatef(x,y,0.0f);         // Translate shape to by x,y
+  glBegin(GL_TRIANGLE_FAN);       // Begin drawing triangle fan
+    glColor3f(1,0,0);
+    glVertex2f(0.0f, 0.0f);
+    int numSegments = 100;
+    GLfloat angle;
+    for (int i = 0; i <= numSegments; ++i) {  // Create circle out of a triangle fan
+      angle = i * 2.0f * PI / numSegments;
+      glVertex2f(cos(angle) * radius, sin(angle) * radius);
     }
-    glEnd();
-    glEndList() ;
-  }
 
-  glPushMatrix() ;
-  glTranslated(x,y,0) ;
-  glScaled(r,r,r) ;
-  glCallList(glCircle) ;
-  glPopMatrix() ;
+  glEnd();
+  glPopMatrix(); 
+
 }
 
-Simulation * runningSimulation = NULL ;
-double runningSimulationTime ;
-double runningSimulationTimeStep ;
+void Figure::drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
+/*
+ * Function for drawing a line
+*/
 
-void handleTimer(int id)
-{
-  if (runningSimulation) {
-    double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0 ;
-    double dt = now - runningSimulationTime ;
-    double dt0 = runningSimulationTimeStep ;
-    runningSimulationTime = now ;
-    double n = std::ceil(dt / dt0) ;
-    for (int i = 0 ; i < n ; ++i) {
-      runningSimulation->step(dt / n) ;
-    }
-    runningSimulation->display() ;
-  }
-  glutTimerFunc((unsigned int)
-                (0.99 * 1000 * runningSimulationTimeStep), handleTimer, 0);
+  glPushMatrix();  
+  glLineWidth(1.0);
+  glBegin(GL_LINES);
+    glColor3f(0,1,0);
+    glVertex2f(x1,y1);
+    glVertex2f(x2,y2);
+  glEnd();
+  glPopMatrix(); 
 }
 
-void run() {
-  run (NULL, 0) ;
+void Figure::display(){
+/* 
+ * Call-back function for window repaint event. Call back when the window first appears
+ * or whenever the window needs repainting 
+ */
+  glClear(GL_COLOR_BUFFER_BIT);                           // "Clear the buffer", i.e. set the background colour
+
+  // Draw the line
+  for (int i = 0; i < (figure->n); ++i) {                 
+    Mass * m1 = (*(figure->springs + i)) -> getMass1();   // Obtain the masses connected to this spring
+    Mass * m2 = (*(figure->springs + i)) -> getMass2();
+
+    GLfloat x1 = (GLfloat) (m1 -> getPosition()).x;       // Get their positions
+    GLfloat y1 = (GLfloat) (m1 -> getPosition()).y;
+
+    GLfloat x2 = (GLfloat) (m2 -> getPosition()).x;
+    GLfloat y2 = (GLfloat) (m2 -> getPosition()).y;
+
+    figure->drawLine(x1,x2,y1,y2);                        // Draw the line
+
+  }
+  
+  // Draw each of the masses at their correct positions
+  for (int i = 0; i < figure->m; ++i) {
+    GLfloat x = (GLfloat) ((*((figure->masses)+i))->getPosition()).x;
+    GLfloat y = (GLfloat) ((*((figure->masses)+i))->getPosition()).y;
+    GLfloat r = (GLfloat) (*((figure->masses)+i))->getRadius();
+
+    figure->drawCircle(x,y,r);
+  }
+
+  glutSwapBuffers();  // The program is double buffered meaning that front and back buffer will be swapped
+                      // alllowing for smoother animations
+  (figure->springmass) -> step((double)(figure->dt)/1000);  // Update simulation
+
 }
 
-void run(Simulation * simulation, double timeStep)
-{
-  runningSimulationTimeStep = timeStep ;
-  runningSimulationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0 ;
-  if (simulation) {
-    runningSimulation = simulation ;
-    glutTimerFunc(0, handleTimer, 0);
+void Figure::reshape(GLsizei width, GLsizei height) {
+/*
+ * Call-back function for window re-size event. Required to maintain the correct proportions
+ * of the shapes.
+*/
+
+  if (height == 0) height = 1;
+  GLfloat aspect = (GLfloat) width / (GLfloat)height; // Compute the aspect ratio
+
+  glViewport(0,0,width,height); // Set the view port to cover the new window
+
+  glMatrixMode(GL_PROJECTION);  // Use the projection matrix
+  glLoadIdentity();             // Reset the projection matrix
+  
+  //Set the clipping area of the viewport to match the viewport
+  if(width >= height) {                                 // Ensure the largest dimension is of length 1
+    gluOrtho2D(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0); // Set the viewport dimensions
+  } else {
+    gluOrtho2D(-1.0, 1.0, -1.0 / aspect, 1.0 / aspect);
   }
-  glutMainLoop() ;
 }
