@@ -1,10 +1,5 @@
-/** file: springmass.cpp
- ** brief: SpringMass simulation implementation
- ** author: Andrea Vedaldi
- **/
 
 #include "springmass.h"
-
 #include <cmath>
 #include <iostream>
 
@@ -144,8 +139,10 @@ SpringMass::SpringMass(Spring * spring1, Mass * mass1, Mass * mass2,double gravi
 void SpringMass::display()
 {
 
-
+/*
 std::cout << *mass1 << " " << *mass2 << std::endl ;
+*/
+
 
 
 }
@@ -154,7 +151,7 @@ double SpringMass::getEnergy() const
 {
   double energy = 0 ;
 
-/* INCOMPLETE: TYPE YOUR CODE HERE */
+// Left to implement
 
   return energy ;
 }
@@ -176,7 +173,5 @@ void SpringMass::step(double dt)
 
 }
 
-
-/* INCOMPLETE: TYPE YOUR CODE HERE */
 
 

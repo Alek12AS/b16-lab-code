@@ -4,19 +4,21 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "test-ball",
+            "name": "test-springmass-graphics-win64",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/test-ball",
+            "program": "${workspaceFolder}\\test-springmass-graphics",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "test-ball"
+            "MIMode": "gdb",
+            "preLaunchTask": "test-springmass-graphics-win64"
         },
+        
         {
             "name": "test-ball-win",
             "type": "cppdbg",
@@ -107,19 +109,6 @@
             "externalConsole": false,
             "MIMode": "lldb",
             "preLaunchTask": "test-springmass-graphics"
-        },
-        {
-            "name": "test-springmass-graphics-win64",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}\\test-springmass-graphics",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "preLaunchTask": "test-springmass-graphics-win64"
         },
         {
             "name": "test-springmass-graphics-win32",
