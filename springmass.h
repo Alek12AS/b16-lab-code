@@ -96,7 +96,7 @@ class Spring
  */
 
 public:
-  Spring(Mass * mass1, Mass * mass2, double naturalLength, double stiff, double damping = 0.01) ;
+  Spring(Mass * mass1, Mass * mass2, double naturalLength, double stiff, double damping = 0) ;
   Mass * getMass1() const ;
   Mass * getMass2() const ;
   Vector2 getForce() const ;

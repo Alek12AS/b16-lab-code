@@ -1,6 +1,8 @@
 
 #include "graphics.h"
-#include "iostream"
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 #define PI 3.14159265f
 
 Figure * figure;
@@ -18,8 +20,9 @@ void Figure::Timer(int value) {
 }
 
 
-Figure::Figure(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt):
-springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt) {
+Figure::Figure(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs):
+springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), maxG(maxG), 
+divs(divs),glCircle(0), glGrid(0) {
 
   figure = this; 
   glutInitDisplayMode(GLUT_DOUBLE);                 // Enable double buffered mode
@@ -34,32 +37,39 @@ springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt) {
 
 }
 
-void Figure::drawCircle(GLfloat x, GLfloat y, GLfloat radius) {
+void Figure::drawCircle(GLfloat x, GLfloat y, GLfloat radius) 
+{
 /* 
  * Draw a circle at position (x,y) of a given radius
  */
-
-  glMatrixMode(GL_MODELVIEW);     // Select the the model-view matrix
-  glLoadIdentity();               // Reset the matrix
-
-  glPushMatrix();                 // Save the current state before performing operations
-  glTranslatef(x,y,0.0f);         // Translate shape to by x,y
-  glBegin(GL_TRIANGLE_FAN);       // Begin drawing triangle fan
+  if (glCircle == 0) {
+    glCircle = glGenLists(1);
+    glNewList(glCircle, GL_COMPILE);
+    
+    glBegin(GL_TRIANGLE_FAN);       // Begin drawing triangle fan
     glColor3f(1,0,0);
     glVertex2f(0.0f, 0.0f);
     int numSegments = 100;
     GLfloat angle;
     for (int i = 0; i <= numSegments; ++i) {  // Create circle out of a triangle fan
       angle = i * 2.0f * PI / numSegments;
-      glVertex2f(cos(angle) * radius, sin(angle) * radius);
+      glVertex2f(cos(angle), sin(angle));
     }
 
   glEnd();
-  glPopMatrix(); 
+  glEndList();
+  } else {
+
+    glPushMatrix();                                 // Save the current state before performing operations
+    glTranslatef(x,y,0.0f);               // Translate shape to by x,y
+    glScalef(radius,radius,radius);
+    glCallList(glCircle);
+    glPopMatrix(); 
+  }
 
 }
 
-void Figure::drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
+void Figure::drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLfloat * color) {
 /*
  * Function for drawing a line
 */
@@ -67,12 +77,66 @@ void Figure::drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
   glPushMatrix();  
   glLineWidth(1.0);
   glBegin(GL_LINES);
-    glColor3f(0,1,0);
+    glColor3f(*color,*(color + 1),*(color + 2));
     glVertex2f(x1,y1);
     glVertex2f(x2,y2);
   glEnd();
   glPopMatrix(); 
 }
+
+void Figure::drawString(GLfloat x, GLfloat y, std::string str) {
+  
+  glRasterPos2f(x,y);
+  for (const char * cstr = str.c_str(); *cstr; ++cstr) {
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, *cstr);
+  }
+}
+
+void Figure::updateGrid() {
+
+  // if (glGrid) {
+  //   glDeleteLists(glGrid, 1);
+  // }
+
+  
+  if (glGrid == 0) {
+    glGrid = glGenLists(1);
+    glNewList(glGrid, GL_COMPILE);
+
+    double delta = 2.0/divs;
+
+    std::stringstream sstr1;
+    std::stringstream sstr2;
+
+    for (int i = 0; i < divs + 1; ++i) {
+
+      float val = -1 + i * delta;
+
+      sstr1.str("");
+      sstr2.str("");
+
+      sstr1 << std::fixed << std::setprecision(1) << val*maxG;
+      sstr2 << std::fixed << std::setprecision(1) << val*maxG;
+
+      GLfloat color[] = {0,1,0};
+      
+      drawLine(val, val, -1, 1, color);
+      drawLine(-1, 1, val, val, color);
+
+      drawString(val + 2*pixelSize, 2*pixelSize, sstr1.str());
+
+      if (i != divs/2) drawString(2*pixelSize, val + 2*pixelSize, sstr2.str());
+
+    };
+
+    glEndList();
+  }
+
+
+  glCallList(figure->glGrid);
+
+}
+
 
 void Figure::display(){
 /* 
@@ -80,27 +144,33 @@ void Figure::display(){
  * or whenever the window needs repainting 
  */
   glClear(GL_COLOR_BUFFER_BIT);                           // "Clear the buffer", i.e. set the background colour
+  
+  // glCallList(figure->glGrid);
+
+  figure->updateGrid();
 
   // Draw the line
   for (int i = 0; i < (figure->n); ++i) {                 
     Mass * m1 = (*(figure->springs + i)) -> getMass1();   // Obtain the masses connected to this spring
     Mass * m2 = (*(figure->springs + i)) -> getMass2();
 
-    GLfloat x1 = (GLfloat) (m1 -> getPosition()).x;       // Get their positions
-    GLfloat y1 = (GLfloat) (m1 -> getPosition()).y;
+    GLfloat x1 = (m1 -> getPosition()).x/figure->maxG;       // Get their positions in the clipping area
+    GLfloat y1 = (m1 -> getPosition()).y/figure->maxG;
 
-    GLfloat x2 = (GLfloat) (m2 -> getPosition()).x;
-    GLfloat y2 = (GLfloat) (m2 -> getPosition()).y;
+    GLfloat x2 = (m2 -> getPosition()).x/figure->maxG;
+    GLfloat y2 = (m2 -> getPosition()).y/figure->maxG;
 
-    figure->drawLine(x1,x2,y1,y2);                        // Draw the line
+    GLfloat color[] = {0,0,1};
+    
+    figure->drawLine(x1,x2,y1,y2, color);                        // Draw the line
 
   }
   
   // Draw each of the masses at their correct positions
   for (int i = 0; i < figure->m; ++i) {
-    GLfloat x = (GLfloat) ((*((figure->masses)+i))->getPosition()).x;
-    GLfloat y = (GLfloat) ((*((figure->masses)+i))->getPosition()).y;
-    GLfloat r = (GLfloat) (*((figure->masses)+i))->getRadius();
+    GLfloat x = ((*((figure->masses)+i))->getPosition()).x/figure->maxG;
+    GLfloat y = ((*((figure->masses)+i))->getPosition()).y/figure->maxG;
+    GLfloat r = (*((figure->masses)+i))->getRadius()/figure->maxG;
 
     figure->drawCircle(x,y,r);
   }
@@ -124,11 +194,15 @@ void Figure::reshape(GLsizei width, GLsizei height) {
 
   glMatrixMode(GL_PROJECTION);  // Use the projection matrix
   glLoadIdentity();             // Reset the projection matrix
-  
+
+  figure->pixelSize = 2.0/height;
+
   //Set the clipping area of the viewport to match the viewport
-  if(width >= height) {                                 // Ensure the largest dimension is of length 1
+  if(width >= height) {                                 // Ensure the smallest dimension is of length 1
     gluOrtho2D(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0); // Set the viewport dimensions
+  
   } else {
-    gluOrtho2D(-1.0, 1.0, -1.0 / aspect, 1.0 / aspect);
+    gluOrtho2D(-1.0, 1.0, -1.0 / aspect, 1.0 / aspect); 
   }
+
 }

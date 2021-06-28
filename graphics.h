@@ -26,7 +26,7 @@ class Figure {
  */
 
 public:
-  Figure(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt);
+  Figure(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs);
   void setTimeInterval(GLuint dt);
   void run();
   static void display();
@@ -35,14 +35,23 @@ public:
   void initGL();
 
 protected:
-  Spring ** springs;
-  Mass ** masses;
-  SpringMass * springmass;
+  double maxG;
+  double pixelSize;
+  int divs;
   int m;
   int n;
   GLuint dt;
+  GLuint glCircle;
+  GLuint glGrid;
+
+
+  Spring ** springs;
+  Mass ** masses;
+  SpringMass * springmass;
   void drawCircle(GLfloat x, GLfloat y, GLfloat radius);
-  void drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2);
+  void drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLfloat * color);
+  void updateGrid();
+  void drawString(GLfloat x, GLfloat y, std::string val);
 
 };
 
