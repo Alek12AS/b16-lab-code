@@ -1,5 +1,6 @@
 
 #include "graphics.h"
+#include "Figure.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -8,19 +9,19 @@
 Figure * figure;
 
 /* Initialize OpenGL Graphics */
-void Figure::initGL() {
+void Figure2D::initGL() {
   // Set "clearing"/background color
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and Opaque
 }
 
 /* Called back when timer expired */
 void Figure::Timer(int value) {
-  glutPostRedisplay();                           // Post a re-pain request to activate display()
-  glutTimerFunc(figure -> dt, Figure::Timer, 0); // next Timer call milliseconds later
+  glutPostRedisplay();                                   // Post a re-paint request to activate display()
+  glutTimerFunc(figure -> getDt(), Figure::Timer, 0);    // next Timer call milliseconds later
 }
 
 
-Figure::Figure(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs):
+Figure2D::Figure2D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs):
 springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), maxG(maxG), 
 divs(divs),glCircle(0), glGrid(0) {
 
@@ -37,7 +38,7 @@ divs(divs),glCircle(0), glGrid(0) {
 
 }
 
-void Figure::drawCircle(GLfloat x, GLfloat y, GLfloat radius) 
+void Figure2D::drawCircle(GLfloat x, GLfloat y, GLfloat radius) 
 {
 /* 
  * Draw a circle at position (x,y) of a given radius
@@ -69,7 +70,7 @@ void Figure::drawCircle(GLfloat x, GLfloat y, GLfloat radius)
 
 }
 
-void Figure::drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLfloat * color) {
+void Figure2D::drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLfloat * color) {
 /*
  * Function for drawing a line
 */
@@ -84,7 +85,7 @@ void Figure::drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLfloat * 
   glPopMatrix(); 
 }
 
-void Figure::drawString(GLfloat x, GLfloat y, std::string str) {
+void Figure2D::drawString(GLfloat x, GLfloat y, std::string str) {
   
   glRasterPos2f(x,y);
   for (const char * cstr = str.c_str(); *cstr; ++cstr) {
@@ -92,7 +93,7 @@ void Figure::drawString(GLfloat x, GLfloat y, std::string str) {
   }
 }
 
-void Figure::updateGrid() {
+void Figure2D::drawGrid() {
 
   // if (glGrid) {
   //   glDeleteLists(glGrid, 1);
@@ -133,7 +134,7 @@ void Figure::updateGrid() {
   }
 
 
-  glCallList(figure->glGrid);
+  glCallList(glGrid);
 
 }
 
@@ -145,40 +146,48 @@ void Figure::display(){
  */
   glClear(GL_COLOR_BUFFER_BIT);                           // "Clear the buffer", i.e. set the background colour
   
-  // glCallList(figure->glGrid);
-
-  figure->updateGrid();
-
-  // Draw the line
-  for (int i = 0; i < (figure->n); ++i) {                 
-    Mass * m1 = (*(figure->springs + i)) -> getMass1();   // Obtain the masses connected to this spring
-    Mass * m2 = (*(figure->springs + i)) -> getMass2();
-
-    GLfloat x1 = (m1 -> getPosition()).x/figure->maxG;       // Get their positions in the clipping area
-    GLfloat y1 = (m1 -> getPosition()).y/figure->maxG;
-
-    GLfloat x2 = (m2 -> getPosition()).x/figure->maxG;
-    GLfloat y2 = (m2 -> getPosition()).y/figure->maxG;
-
-    GLfloat color[] = {0,0,1};
-    
-    figure->drawLine(x1,x2,y1,y2, color);                        // Draw the line
-
-  }
-  
-  // Draw each of the masses at their correct positions
-  for (int i = 0; i < figure->m; ++i) {
-    GLfloat x = ((*((figure->masses)+i))->getPosition()).x/figure->maxG;
-    GLfloat y = ((*((figure->masses)+i))->getPosition()).y/figure->maxG;
-    GLfloat r = (*((figure->masses)+i))->getRadius()/figure->maxG;
-
-    figure->drawCircle(x,y,r);
-  }
+  figure -> draw();
 
   glutSwapBuffers();  // The program is double buffered meaning that front and back buffer will be swapped
                       // alllowing for smoother animations
-  (figure->springmass) -> step((double)(figure->dt)/1000);  // Update simulation
 
+  figure -> updateAnimation();
+
+}
+
+void Figure2D::draw() {
+
+  drawGrid();
+
+  // Draw the line
+  for (int i = 0; i < (n); ++i) {                 
+    Mass * m1 = (*(springs + i)) -> getMass1();   // Obtain the masses connected to this spring
+    Mass * m2 = (*(springs + i)) -> getMass2();
+
+    GLfloat x1 = (m1 -> getPosition()).x/maxG;    // Get their positions in the clipping area
+    GLfloat y1 = (m1 -> getPosition()).y/maxG;
+
+    GLfloat x2 = (m2 -> getPosition()).x/maxG;
+    GLfloat y2 = (m2 -> getPosition()).y/maxG;
+
+    GLfloat color[] = {0,0,1};
+    
+    drawLine(x1,x2,y1,y2, color);
+  }
+
+    // Draw each of the masses at their correct positions
+    for (int i = 0; i < m; ++i) {
+      GLfloat x = ((*(masses+i))->getPosition()).x/maxG;
+      GLfloat y = ((*(masses+i))->getPosition()).y/maxG;
+      GLfloat r = (*(masses+i))->getRadius()/maxG;
+
+      drawCircle(x,y,r);
+    }
+}   
+
+
+void Figure2D::updateAnimation() {
+  springmass -> step((double)dt/1000);
 }
 
 void Figure::reshape(GLsizei width, GLsizei height) {
@@ -192,17 +201,28 @@ void Figure::reshape(GLsizei width, GLsizei height) {
 
   glViewport(0,0,width,height); // Set the view port to cover the new window
 
+  figure -> updateClip(width, height);
+
+}
+
+void Figure2D::updateClip(GLfloat width, GLfloat height) {
+
+  GLfloat aspect = width/height;
+
   glMatrixMode(GL_PROJECTION);  // Use the projection matrix
   glLoadIdentity();             // Reset the projection matrix
 
-  figure->pixelSize = 2.0/height;
-
-  //Set the clipping area of the viewport to match the viewport
-  if(width >= height) {                                 // Ensure the smallest dimension is of length 1
+  if(aspect >= 1) {                                 // Ensure the smallest dimension is of length 1
     gluOrtho2D(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0); // Set the viewport dimensions
   
   } else {
     gluOrtho2D(-1.0, 1.0, -1.0 / aspect, 1.0 / aspect); 
   }
 
+  pixelSize = 2.0/height;
+
+}
+
+GLuint Figure2D::getDt() {
+  return dt;
 }

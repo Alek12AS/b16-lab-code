@@ -45,7 +45,7 @@ int main(int argc, char** argv)
   
   glutInit(&argc,argv) ;                          //Initialise glut
 
-  Figure figure(springs, masses, &springmass, m, n, 30, 100, 10); 
+  Figure2D figure(springs, masses, &springmass, m, n, 30, 100, 10); 
   
   return 0 ;
 }

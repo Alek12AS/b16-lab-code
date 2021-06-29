@@ -3,13 +3,15 @@
 
 #include "simulation.h"
 #include "springmass.h"
+#include "Figure.h"
 #include <string>
 #include <vector>
 #include <windows.h>
 #include "GL/glut.h"
 
 
-class Figure {
+class Figure2D : public Figure
+{
 
 /*
  * Constructor Parameters:
@@ -26,12 +28,13 @@ class Figure {
  */
 
 public:
-  Figure(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs);
+  Figure2D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs);
+  
   void setTimeInterval(GLuint dt);
-  void run();
-  static void display();
-  static void reshape(GLsizei width, GLsizei height);
-  static void Timer(int Value);
+  virtual void draw();
+  virtual void updateAnimation();
+  virtual void updateClip(GLfloat width, GLfloat height);
+  virtual GLuint getDt();
   void initGL();
 
 protected:
@@ -50,8 +53,12 @@ protected:
   SpringMass * springmass;
   void drawCircle(GLfloat x, GLfloat y, GLfloat radius);
   void drawLine(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLfloat * color);
-  void updateGrid();
+  void drawGrid();
   void drawString(GLfloat x, GLfloat y, std::string val);
+
+};
+
+class Figure3D : public Figure {
 
 };
 
