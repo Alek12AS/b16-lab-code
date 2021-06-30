@@ -8,10 +8,23 @@
 
 Figure * figure;
 
-/* Initialize OpenGL Graphics */
-void Figure2D::initGL() {
-  // Set "clearing"/background color
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and Opaque
+/* ---------------------------------------------------------------- */
+// class Figure
+/* ---------------------------------------------------------------- */
+
+void Figure::display(){
+/* 
+ * Call-back function for window repaint event. Call back when the window first appears
+ * or whenever the window needs repainting 
+ */
+  
+  figure -> draw();
+
+  glutSwapBuffers();  // The program is double buffered meaning that front and back buffer will be swapped
+                      // alllowing for smoother animations
+
+  figure -> updateAnimation();
+
 }
 
 /* Called back when timer expired */
@@ -19,6 +32,10 @@ void Figure::Timer(int value) {
   glutPostRedisplay();                                   // Post a re-paint request to activate display()
   glutTimerFunc(figure -> getDt(), Figure::Timer, 0);    // next Timer call milliseconds later
 }
+
+/* ---------------------------------------------------------------- */
+// class Figure2D : public Figure
+/* ---------------------------------------------------------------- */
 
 
 Figure2D::Figure2D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs):
@@ -36,6 +53,12 @@ divs(divs),glCircle(0), glGrid(0) {
   initGL();                                         // Our own OpenGL initialization
   glutMainLoop();                                   // Enter infinite event loop
 
+}
+
+/* Initialize OpenGL Graphics */
+void Figure2D::initGL() {
+  // Set "clearing"/background color
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and Opaque
 }
 
 void Figure2D::drawCircle(GLfloat x, GLfloat y, GLfloat radius) 
@@ -62,7 +85,7 @@ void Figure2D::drawCircle(GLfloat x, GLfloat y, GLfloat radius)
   } else {
 
     glPushMatrix();                                 // Save the current state before performing operations
-    glTranslatef(x,y,0.0f);               // Translate shape to by x,y
+    glTranslatef(x,y,0.0f);                         // Translate shape to by x,y
     glScalef(radius,radius,radius);
     glCallList(glCircle);
     glPopMatrix(); 
@@ -139,27 +162,13 @@ void Figure2D::drawGrid() {
 }
 
 
-void Figure::display(){
-/* 
- * Call-back function for window repaint event. Call back when the window first appears
- * or whenever the window needs repainting 
- */
-  glClear(GL_COLOR_BUFFER_BIT);                           // "Clear the buffer", i.e. set the background colour
-  
-  figure -> draw();
-
-  glutSwapBuffers();  // The program is double buffered meaning that front and back buffer will be swapped
-                      // alllowing for smoother animations
-
-  figure -> updateAnimation();
-
-}
-
 void Figure2D::draw() {
+
+  glClear(GL_COLOR_BUFFER_BIT);                    // "Clear the buffer", i.e. set the background colour
 
   drawGrid();
 
-  // Draw the line
+  // Draw the lines
   for (int i = 0; i < (n); ++i) {                 
     Mass * m1 = (*(springs + i)) -> getMass1();   // Obtain the masses connected to this spring
     Mass * m2 = (*(springs + i)) -> getMass2();
@@ -226,3 +235,155 @@ void Figure2D::updateClip(GLfloat width, GLfloat height) {
 GLuint Figure2D::getDt() {
   return dt;
 }
+
+/* ---------------------------------------------------------------- */
+// class Figure3D
+/* ---------------------------------------------------------------- */
+
+Figure3D::Figure3D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG):
+springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), glSphere(0), maxG(maxG) {
+
+  figure = this; 
+  glutInitDisplayMode(GLUT_DOUBLE);                 // Enable double buffered mode
+  glutInitWindowSize(640, 640);                     // Set the window's initial width & height - non-square
+  glutInitWindowPosition(50, 50);                   // Position the window's initial top-left corner
+  glutCreateWindow("Masses Connected by Springs");  // Create window with the given title
+  glutDisplayFunc(display);                         // Register callback handler for window re-paint event
+  glutReshapeFunc(reshape);                         // Register callback handler for window re-size event
+  glutTimerFunc(0, Timer, 0);                       // First timer call immediately
+  initGL();                                         // Our own OpenGL initialization
+  glutMainLoop();                                   // Enter infinite event loop
+
+}
+
+/* Initialize OpenGL Graphics */
+void Figure3D::initGL() {
+
+  // Set "clearing"/background color
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);                   // Black and Opaque
+  glClearDepth(1.0f);                                     // Set background depth to farthest
+  
+  GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };      // Position of the light source 
+  GLfloat lmodel_ambient[] = { 0.4, 0.4, 0.4, 1.0 };      // Global ambient light available
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient); //
+  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+  glEnable(GL_LIGHTING);                                  // Enable lighting for opengl to perform calculations
+  glEnable(GL_LIGHT0);                                    // Enable the white light source
+
+  glShadeModel (GL_SMOOTH);
+  glEnable(GL_DEPTH_TEST);                                // Enable depth testing for z culling
+  glDepthFunc(GL_LEQUAL);                                 // Set the type of of depth test
+  glShadeModel(GL_SMOOTH);                                // Enable smooth shading
+  glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);       // Nice perspective correction
+}
+
+void Figure3D::draw() {
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear colour and depth buffer
+  glMatrixMode(GL_MODELVIEW);
+
+  // Draw the lines
+  for (int i = 0; i < n; ++i) {                 
+    Mass * m1 = (*(springs + i)) -> getMass1();   // Obtain the masses connected to this spring
+    Mass * m2 = (*(springs + i)) -> getMass2();
+
+    GLfloat x1 = (m1 -> getPosition()).x/maxG;    // Get their positions in the clipping area
+    GLfloat y1 = (m1 -> getPosition()).y/maxG;
+    GLfloat z1 = (m1 -> getPosition()).z/maxG;
+
+    GLfloat x2 = (m2 -> getPosition()).x/maxG;
+    GLfloat y2 = (m2 -> getPosition()).y/maxG;
+    GLfloat z2 = (m2 -> getPosition()).z/maxG;
+
+    GLfloat color[] = {0,0,1};
+
+    GLfloat coords[] = {x1,y1,z1,x2,y2,z2};
+
+    drawLine(coords, color);
+  }
+
+  // Draw each of the masses at their correct positions
+  for (int i = 0; i < m; ++i) {
+    GLfloat x = ((*(masses+i))->getPosition()).x/maxG;
+    GLfloat y = ((*(masses+i))->getPosition()).y/maxG;
+    GLfloat z = ((*(masses+i))->getPosition()).z/maxG;
+    GLfloat r = (*(masses+i))->getRadius()/maxG;
+
+    drawSphere(x,y,z,r);
+  }
+                    
+}
+
+void Figure3D::drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius) {
+  
+  /* 
+   * Draw a circle at position (x,y) of a given radius
+   */
+   
+  
+
+  if (glSphere == 0) {
+    glSphere = glGenLists(1);
+    glNewList(glSphere, GL_COMPILE);
+    
+    GLfloat mat_shininess[] = { 50 };                                       // Shininess value out of 100
+    GLfloat mat_specular[] = { 0, 0.702, 1.0, 1.0 };                        // Specular reflectivity
+    GLfloat mat_amb_diff[] = { 0, 0.702, 1.0, 1.0 };                        // ambient and diffuse reflectivity
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat_amb_diff);  
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    
+    // gluSphere(glQuad,1.0,3,3);
+    glutSolidSphere(1.0,50,50);
+    
+    glEndList();
+  } else {
+
+    glPushMatrix();                                 // Save the current state before performing operations
+    glTranslatef(x,y,z);                            // Translate shape to by x,y
+    glScalef(radius,radius,radius);
+    glCallList(glSphere);
+    glPopMatrix(); 
+  }
+
+}
+
+void Figure3D::drawLine(GLfloat * coords, GLfloat * color) {
+  glPushMatrix();  
+  
+  GLfloat mat_shininess[] = { 50.0 };
+  GLfloat mat_specular[] = { 0, 1.0, 0, 1.0 };
+  GLfloat mat_amb_diff[] = { 0, 1.0, 0, 1.0 };
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat_amb_diff);
+  glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+  glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+  glLineWidth(1.0);
+  glBegin(GL_LINES);
+    glColor3f(*color,*(color + 1),*(color + 2));
+    glVertex3f(*(coords),*(coords+1),*(coords+2));
+    glVertex3f(*(coords+3),*(coords+4),*(coords+5));
+  glEnd();
+  glPopMatrix(); 
+}
+
+
+void Figure3D::updateAnimation() {
+  springmass->step((double)dt/1000);
+}
+
+void Figure3D::updateClip(GLfloat width, GLfloat height) {
+  
+  GLfloat aspect = width/height;
+
+  glMatrixMode(GL_PROJECTION);  // Use the projection matrix
+  glLoadIdentity();             // Reset the projection matrix
+
+  gluPerspective(45.0f, aspect, 0.1f, 100.0f);
+}
+
+GLuint Figure3D::getDt() {
+  return dt;
+}
+
+

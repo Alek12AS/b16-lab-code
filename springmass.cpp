@@ -11,32 +11,32 @@ Mass::Mass()
 : position(), velocity(), force(), mass(1), radius(1)
 { }
 
-Mass::Mass(Vector2 position, Vector2 velocity, double mass, double radius)
+Mass::Mass(Vector3 position, Vector3 velocity, double mass, double radius)
 : position(position), velocity(velocity), force(), mass(mass), radius(radius),
 xmin(-1),xmax(1),ymin(-1),ymax(1)
 { }
 
-void Mass::setForce(Vector2 f)
+void Mass::setForce(Vector3 f)
 {
   force = f ;
 }
 
-void Mass::addForce(Vector2 f)
+void Mass::addForce(Vector3 f)
 {
   force = force + f ;
 }
 
-Vector2 Mass::getForce() const
+Vector3 Mass::getForce() const
 {
   return force ;
 }
 
-Vector2 Mass::getPosition() const
+Vector3 Mass::getPosition() const
 {
   return position ;
 }
 
-Vector2 Mass::getVelocity() const
+Vector3 Mass::getVelocity() const
 {
   return velocity ;
 }
@@ -88,23 +88,23 @@ Mass * Spring::getMass2() const
   return mass2 ;
 }
 
-Vector2 Spring::getForce() const
+Vector3 Spring::getForce() const
 {
   double ell = getLength() ;
 
-  Vector2 u_12 = 1/ell*(mass2->getPosition() - mass1->getPosition()) ;
-  Vector2 v_12 = u_12 * dot((mass2->getVelocity() - mass1->getVelocity()),u_12);
+  Vector3 u_12 = 1/ell*(mass2->getPosition() - mass1->getPosition()) ;
+  Vector3 v_12 = u_12 * dot((mass2->getVelocity() - mass1->getVelocity()),u_12);
   
-  Vector2 F_k = u_12 * stiffness * (ell - naturalLength) ;
+  Vector3 F_k = u_12 * stiffness * (ell - naturalLength) ;
 
-  Vector2 F_d = v_12 * damping ;
+  Vector3 F_d = v_12 * damping ;
 
   return (F_k + F_d) ;
 }
 
 double Spring::getLength() const
 {
-  Vector2 u = mass2->getPosition() - mass1->getPosition() ;
+  Vector3 u = mass2->getPosition() - mass1->getPosition() ;
   return u.norm() ;
 }
 
@@ -161,7 +161,7 @@ double SpringMass::getEnergy() const
 
 void SpringMass::step(double dt)
 {
-  Vector2 g(0,-gravity) ;
+  Vector3 g(0.0,-gravity) ;
 
   for (int i(0); i < n; ++i) {
 
@@ -171,7 +171,7 @@ void SpringMass::step(double dt)
     mass1 -> setForce(g) ;
     mass2 -> setForce(g) ;
 
-    Vector2 F_plus = (*(springs+i))->getForce() ;
+    Vector3 F_plus = (*(springs+i))->getForce() ;
 
     mass1 -> addForce(F_plus)  ;
     mass2 -> addForce(F_plus*-1)  ;

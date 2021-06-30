@@ -9,6 +9,10 @@
 #include <windows.h>
 #include "GL/glut.h"
 
+/* ---------------------------------------------------------------- */
+// class Figure2D : public Figure
+/* ---------------------------------------------------------------- */
+
 
 class Figure2D : public Figure
 {
@@ -28,16 +32,17 @@ class Figure2D : public Figure
  */
 
 public:
-  Figure2D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs);
-  
+ 
+  Figure2D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs); 
   void setTimeInterval(GLuint dt);
+  void initGL();
   virtual void draw();
   virtual void updateAnimation();
   virtual void updateClip(GLfloat width, GLfloat height);
   virtual GLuint getDt();
-  void initGL();
 
 protected:
+
   double maxG;
   double pixelSize;
   int divs;
@@ -58,7 +63,36 @@ protected:
 
 };
 
+/* ---------------------------------------------------------------- */
+// class Figure3D : public Figure
+/* ---------------------------------------------------------------- */
+
 class Figure3D : public Figure {
+
+public:
+
+  Figure3D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG);
+  void setTimeInterval(GLuint dt);
+  void initGL();
+  virtual void draw();
+  virtual void updateAnimation();
+  virtual void updateClip(GLfloat width, GLfloat height);
+  virtual GLuint getDt();
+
+protected:
+
+  double maxG;
+  int m;
+  int n;
+  GLuint dt;
+  GLuint glSphere;
+
+
+  Spring ** springs;
+  Mass ** masses;
+  SpringMass * springmass;
+  void drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius);
+  void drawLine(GLfloat * coords, GLfloat * color);
 
 };
 
