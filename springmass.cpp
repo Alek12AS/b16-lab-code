@@ -21,6 +21,10 @@ void Mass::setForce(Vector3 f)
   force = f ;
 }
 
+void Mass::setPosition(Vector3 np) {
+  position = np;
+}
+
 void Mass::addForce(Vector3 f)
 {
   force = force + f ;

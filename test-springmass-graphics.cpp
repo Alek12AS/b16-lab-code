@@ -10,9 +10,9 @@ int main(int argc, char** argv)
 {
   // Physical constants for the springs and masses
   const double mass = 0.1 ;
-  const double radius = 0.1 ;
+  const double radius = 0.05 ;
   const double naturalLength = 1.5 ;
-  const double stiffness = 0.1 ;
+  const double stiffness = 0.01 ;
   const double damping = 0.005;
 
   // Instantiating the mass objects
@@ -21,9 +21,10 @@ int main(int argc, char** argv)
   Mass m3(Vector3(0.5,0,-5.8660), Vector3(), mass, radius) ;
   Mass m4(Vector3(0,0.8165,-5.4330), Vector3(), mass, radius) ;
   Mass m5(Vector3(0,-0.8165,-5.4330), Vector3(), mass, radius) ;
+  Mass m6(Vector3(0.5,0), Vector3(), mass, radius) ;
+  Mass m7(Vector3(-0.5,0), Vector3(), mass, radius) ;
 
-
-  Mass * masses[] = {&m1, &m2, &m3, &m4, &m5} ;             // Create an array of pointers to the mass
+  Mass * masses[] = {&m6, &m7} ;             // Create an array of pointers to the mass
 
 
   //Instantiate a bunch of spring objects
@@ -36,8 +37,9 @@ int main(int argc, char** argv)
   Spring spring7(&m5, &m1, naturalLength, stiffness, damping) ;
   Spring spring8(&m5, &m2, naturalLength, stiffness, damping) ;
   Spring spring9(&m5, &m3, naturalLength, stiffness, damping) ;
+  Spring spring10(&m6, &m7, naturalLength, stiffness, damping) ;
 
-  Spring * springs[] = {&spring1, &spring2, &spring3, &spring4, &spring5, &spring6, &spring7, &spring8, &spring9} ;
+  Spring * springs[] = {&spring10} ;
 
 
   const int m = sizeof(masses)/sizeof(*masses);   // Work out the number of masses
@@ -48,8 +50,8 @@ int main(int argc, char** argv)
   
   glutInit(&argc,argv) ;                          //Initialise glut
 
-  // Figure2D figure(springs, masses, &springmass, m, n, 30, 100, 10); 
-  Figure3D figure(springs, masses, &springmass, m, n, 30, 1); 
+  Figure2D figure(springs, masses, &springmass, m, n, 30, 1, 10); 
+  // Figure3D figure(springs, masses, &springmass, m, n, 30, 1); 
   
 
   

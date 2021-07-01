@@ -31,6 +31,7 @@ inline Vector3 operator- (Vector3 a, Vector3 b) { return Vector3(a.x-b.x, a.y-b.
 inline Vector3 operator* (double a, Vector3 b)  { return Vector3(a*b.x, a*b.y, a*b.z) ; }
 inline Vector3 operator* (Vector3 a, double b)  { return Vector3(a.x*b, a.y*b, a.z*b) ; }
 inline Vector3 operator/ (Vector3 a, double b)  { return Vector3(a.x/b, a.y/b, a.z/b) ; }
+inline Vector3 cross(Vector3 a, Vector3 b) { return Vector3(a.y*b.z - b.y*a.z, a.z*b.x - b.z*a.x, a.x*b.y - b.x*a.y);}
 inline double dot(Vector3 a, Vector3 b) { return a.x*b.x + a.y*b.y + a.z*b.z ; }
 
 /* ---------------------------------------------------------------- */
@@ -56,6 +57,7 @@ public:
   Mass() ;
   Mass(Vector3 position, Vector3 velocity, double mass, double radius) ;
   void setForce(Vector3 f) ;
+  void setPosition(Vector3 np);
   void addForce(Vector3 f) ;
   Vector3 getForce() const ;
   Vector3 getPosition() const ;

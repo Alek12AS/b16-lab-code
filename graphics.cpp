@@ -4,7 +4,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#define PI 3.14159265f
+#include <cmath>
+#define PI 3.14159265358979323846
 
 Figure * figure;
 
@@ -32,6 +33,43 @@ void Figure::Timer(int value) {
   glutPostRedisplay();                                   // Post a re-paint request to activate display()
   glutTimerFunc(figure -> getDt(), Figure::Timer, 0);    // next Timer call milliseconds later
 }
+
+void Figure::specialKeys(int key, int x, int y) {
+  
+  switch(key) {
+    case GLUT_KEY_RIGHT:
+      figure->rightOrLeftKey(true); break;
+
+    case GLUT_KEY_LEFT:
+      figure->rightOrLeftKey(false); break;
+
+    case GLUT_KEY_UP:
+      figure->upOrDownKey(true); break;
+
+    case GLUT_KEY_DOWN:
+      figure->upOrDownKey(false); break;
+  } 
+}
+
+void Figure::keyboard(unsigned char key, int x, int y) {
+  switch(key) {
+    case 113: // q
+      figure->qOrEKey(true); break;
+    case 101: // e
+      figure->qOrEKey(false); break;
+  }
+}
+
+void Figure::rightOrLeftKey(bool b) {
+  // to implement
+}
+void Figure::upOrDownKey(bool b) {
+  // to implement
+}
+void Figure::qOrEKey(bool q) {
+  // to implement
+}
+
 
 /* ---------------------------------------------------------------- */
 // class Figure2D : public Figure
@@ -192,6 +230,7 @@ void Figure2D::draw() {
 
       drawCircle(x,y,r);
     }
+
 }   
 
 
@@ -241,8 +280,11 @@ GLuint Figure2D::getDt() {
 /* ---------------------------------------------------------------- */
 
 Figure3D::Figure3D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG):
-springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), glSphere(0), maxG(maxG) {
+springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), glSphere(0), maxG(maxG), rotIncr(2),
+moveIncr(0.2) {
 
+  findCentroid();                                   // Find the intial value of the centroid and CE to be used
+                                                    // for adjusting the view 
   figure = this; 
   glutInitDisplayMode(GLUT_DOUBLE);                 // Enable double buffered mode
   glutInitWindowSize(640, 640);                     // Set the window's initial width & height - non-square
@@ -251,6 +293,8 @@ springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), glSphere(0
   glutDisplayFunc(display);                         // Register callback handler for window re-paint event
   glutReshapeFunc(reshape);                         // Register callback handler for window re-size event
   glutTimerFunc(0, Timer, 0);                       // First timer call immediately
+  glutSpecialFunc(specialKeys);                     // Register call-back handler for special key events
+  glutKeyboardFunc(keyboard);                       // Register call-back handler for the other keys
   initGL();                                         // Our own OpenGL initialization
   glutMainLoop();                                   // Enter infinite event loop
 
@@ -300,6 +344,12 @@ void Figure3D::draw() {
     GLfloat coords[] = {x1,y1,z1,x2,y2,z2};
 
     drawLine(coords, color);
+
+    Vector3 newPos = CE + centroid;
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(newPos.x, newPos.y, newPos.z, centroid.x, centroid.y, centroid.z, up.x, up.y, up.z);
   }
 
   // Draw each of the masses at their correct positions
@@ -320,7 +370,6 @@ void Figure3D::drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius) {
    * Draw a circle at position (x,y) of a given radius
    */
    
-  
 
   if (glSphere == 0) {
     glSphere = glGenLists(1);
@@ -386,4 +435,80 @@ GLuint Figure3D::getDt() {
   return dt;
 }
 
+void Figure3D::findCentroid() {
 
+  centroid.x = 0;
+  centroid.y = 0;
+  centroid.z = 0;
+  for(int i = 0; i < m; ++i) {
+    centroid = centroid + (*(masses + i))->getPosition();
+  }
+
+  centroid = centroid/m;
+
+  CE = -1 * centroid;
+  planeVec.x = 1;
+  up.y = 1;
+}
+
+
+void Figure3D::rightOrLeftKey(bool r){
+  
+  if (r) {
+    rotate(CE, false, true);
+    
+  } else {
+    rotate(CE, true, true);
+    
+  }
+}
+
+
+void Figure3D::upOrDownKey(bool u) {
+  
+  if (u) {
+    rotate(CE, false, false);
+
+  } else {
+    rotate(CE, true, false);
+  
+    }
+}
+
+void Figure3D::qOrEKey(bool q) {
+  
+  Vector3 delta = CE/CE.norm() * moveIncr;
+  
+  if (q) {
+    CE = CE - delta;
+  } else {
+    CE = CE + delta;
+  }
+}
+
+
+void Figure3D::rotate(Vector3 & p, bool cc, bool hp) {
+
+  if (cc && hp) {
+    double x = p.x;
+    double z = p.z;
+    p.x  = x * std::cos(rotIncr*PI/180) - z * std::sin(rotIncr*PI/180);
+    p.z = x * std::sin(rotIncr*PI/180) + z * std::cos(rotIncr*PI/180);
+  } else if (!cc && hp) {
+    double x = p.x;
+    double z = p.z;
+    p.x  = x * std::cos(rotIncr*PI/180) + z * std::sin(rotIncr*PI/180);
+    p.z = - x * std::sin(rotIncr*PI/180) + z * std::cos(rotIncr*PI/180);
+  } else if (cc && !hp) {
+    double z = p.z;
+    double y = p.y;
+    p.z  = z * std::cos(rotIncr*PI/180) - y * std::sin(rotIncr*PI/180);
+    p.y = z * std::sin(rotIncr*PI/180) + y * std::cos(rotIncr*PI/180);
+  } else {
+    double z = p.z;
+    double y = p.y;
+    p.z  = z * std::cos(-rotIncr*PI/180) - y * std::sin(-rotIncr*PI/180);
+    p.y = z * std::sin(-rotIncr*PI/180) + y * std::cos(-rotIncr*PI/180);
+  }
+  
+}

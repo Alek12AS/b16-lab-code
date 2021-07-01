@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <windows.h>
+#include <optional>
 #include "GL/glut.h"
 
 /* ---------------------------------------------------------------- */
@@ -82,8 +83,14 @@ public:
 protected:
 
   double maxG;
+  double rotIncr;
+  double moveIncr;
   int m;
   int n;
+  Vector3 centroid;             // Centre of Mass
+  Vector3 CE;                   // Vector from the centroid to the eye
+  Vector3 up;
+  Vector3 planeVec;             // Used to obtain the up vector
   GLuint dt;
   GLuint glSphere;
 
@@ -93,6 +100,11 @@ protected:
   SpringMass * springmass;
   void drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius);
   void drawLine(GLfloat * coords, GLfloat * color);
+  void rotate(Vector3 & p, bool cc, bool hp);
+  void findCentroid();
+  virtual void rightOrLeftKey(bool r);
+  virtual void upOrDownKey(bool u);
+  virtual void qOrEKey(bool q);
 
 };
 
