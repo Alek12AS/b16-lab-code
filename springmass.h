@@ -135,7 +135,7 @@ class SpringMass : public Simulation
  * Reprents the universe comprising of two masses and one spring
 */
 public:
-  SpringMass(Mass **masses, Spring **springs,int m ,int n , double gravity = MOON_GRAVITY) ;
+  SpringMass(Mass **masses, Spring **springs,int m ,int n , double gravity = 0) ;
   void step(double dt) ;
   void display() ;
   double getEnergy() const ;

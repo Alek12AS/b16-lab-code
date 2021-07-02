@@ -1,0 +1,14 @@
+# of dimensions                                         Set to 1 or 2
+# masses,# springs
+scale factor  
+# divisions                                             For the grid in 2D, in 3D set to zero
+mass|radius|x,y,z|vx,vy,vz                              Specifies the attributes for each mass with x,y,z the intial position and vx,vy,vz the
+.                                                       initial velocity
+.
+.
+mass|radius|x,y,z|vx,vy,vz
+natural length|stiffness|damping|# of mass1,# of mass2  Specifies the spring attributes including the number of the masses connected
+.                                                       starting from 1.
+.
+.
+natural length|stiffness|damping|# of mass1,# of mass2  

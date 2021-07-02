@@ -2,58 +2,119 @@
 #include "graphics.h"
 #include "GL/glut.h"
 #include "springmass.h"
+#include "string"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
+#include <vector>
+
 
 int main(int argc, char** argv)
 {
-  // Physical constants for the springs and masses
-  const double mass = 0.1 ;
-  const double radius = 0.05 ;
-  const double naturalLength = 1.5 ;
-  const double stiffness = 0.01 ;
-  const double damping = 0.005;
+  std::ifstream inFile;
 
-  // Instantiating the mass objects
-  Mass m1(Vector3(0,0,-5), Vector3(), mass, radius) ;
-  Mass m2(Vector3(-0.5,0,-5.8660), Vector3(), mass, radius) ;
-  Mass m3(Vector3(0.5,0,-5.8660), Vector3(), mass, radius) ;
-  Mass m4(Vector3(0,0.8165,-5.4330), Vector3(), mass, radius) ;
-  Mass m5(Vector3(0,-0.8165,-5.4330), Vector3(), mass, radius) ;
-  Mass m6(Vector3(0.5,0), Vector3(), mass, radius) ;
-  Mass m7(Vector3(-0.5,0), Vector3(), mass, radius) ;
+  std::string filename = argv[1];     //provide the file name as argument in the terminal
 
-  Mass * masses[] = {&m6, &m7} ;             // Create an array of pointers to the mass
+  inFile.open(filename);
 
+  int dimension;
+  int m;
+  int n;
+  int divs;
+  double mass;
+  double sf;
+  std::stringstream ss;
+  std::vector<Mass*> massesV;
+  std::vector<Spring*> springsV;
 
-  //Instantiate a bunch of spring objects
-  Spring spring1(&m1, &m2, naturalLength, stiffness, damping) ;
-  Spring spring2(&m2, &m3, naturalLength, stiffness, damping) ;
-  Spring spring3(&m1, &m3, naturalLength, stiffness, damping) ;
-  Spring spring4(&m4, &m1, naturalLength, stiffness, damping) ;
-  Spring spring5(&m4, &m2, naturalLength, stiffness, damping) ;
-  Spring spring6(&m4, &m3, naturalLength, stiffness, damping) ;
-  Spring spring7(&m5, &m1, naturalLength, stiffness, damping) ;
-  Spring spring8(&m5, &m2, naturalLength, stiffness, damping) ;
-  Spring spring9(&m5, &m3, naturalLength, stiffness, damping) ;
-  Spring spring10(&m6, &m7, naturalLength, stiffness, damping) ;
+  if (inFile.is_open()) {             // If file is accessible parse it
+    std::string temp;
+    char temp2;
+    getline(inFile,temp);
+    ss << temp;
+    ss >> dimension;
+    ss.clear();
+    getline(inFile,temp);
+    ss << temp;
+    ss >> m;
+    ss >> temp2;
+    ss >> n;
+    ss.clear();
+    getline(inFile,temp);
+    ss << temp;
+    ss >> sf;
+    ss.clear();
+    getline(inFile,temp);
+    ss << temp;
+    ss >> divs;
+    ss.clear();
 
-  Spring * springs[] = {&spring10} ;
+    for(int i = 0; i < m; ++i) {       // For every mass parse their intialisation values
+      getline(inFile,temp);
+      double mass;
+      double radius;
+      Vector3 position;
+      Vector3 velocity;
+      
+      ss << temp;
+      ss >> mass;
+      ss >> temp2;
+      ss >> radius;
+      ss >> temp2;
+      ss >> position.x;
+      ss >> temp2;
+      ss >> position.y;
+      ss >> temp2;
+      ss >> position.z;
+      ss >> temp2;
+      ss >> velocity.x;
+      ss >> temp2;
+      ss >> velocity.y;
+      ss >> temp2;
+      ss >> velocity.z;
+      ss.clear();
+      massesV.push_back(new Mass(position, velocity, mass, radius));  // Place the pointers to the mass objects in a vector
+    }
 
+    for (int i = 0;i < n; ++i) {  //For every spring parse their initialisation values
+      getline(inFile,temp);
+      double stiffness;
+      double damping;
+      double natLen;
+      int m1;
+      int m2;
 
-  const int m = sizeof(masses)/sizeof(*masses);   // Work out the number of masses
-  const int n = sizeof(springs)/sizeof(*springs); // Work out the number of springs
+      ss << temp;
+      ss >> natLen;
+      ss >> temp2;
+      ss >> stiffness;
+      ss >> temp2;
+      ss >> damping;
+      ss >> temp2;
+      ss >> m1;
+      ss >> temp2;
+      ss >> m2;
+      ss.clear();
+      // Place the pointers to each spring object in a vector
+      springsV.push_back(new Spring(massesV[m1-1], massesV[m2-1], natLen, stiffness, damping));
+    }
+    
+  }
+  
+  Mass ** masses = &massesV[0];       // Take the pointer to the first instance
+  Spring ** springs = &springsV[0];
 
-  SpringMass springmass(masses, springs, m, n) ;
+  SpringMass sm(masses, springs, m,  n, 0);
 
   
-  glutInit(&argc,argv) ;                          //Initialise glut
+  glutInit(&argc,argv) ;                                    //Initialise glut
 
-  Figure2D figure(springs, masses, &springmass, m, n, 30, 1, 10); 
-  // Figure3D figure(springs, masses, &springmass, m, n, 30, 1); 
-  
-
+  if (dimension == 2) {
+    Figure2D figure(springs, masses, &sm, m, n, sf, divs);  //Instantiate the appropriate figure
+  } else if (dimension == 3) {
+    Figure3D figure(springs, masses, &sm, m, n, 1); 
+  }
   
   return 0 ;
 }

@@ -76,8 +76,8 @@ void Figure::qOrEKey(bool q) {
 /* ---------------------------------------------------------------- */
 
 
-Figure2D::Figure2D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG, int divs):
-springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), maxG(maxG), 
+Figure2D::Figure2D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, double maxG, int divs):
+springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(30), maxG(maxG), 
 divs(divs),glCircle(0), glGrid(0) {
 
   figure = this; 
@@ -279,8 +279,8 @@ GLuint Figure2D::getDt() {
 // class Figure3D
 /* ---------------------------------------------------------------- */
 
-Figure3D::Figure3D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, GLuint dt, double maxG):
-springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(dt), glSphere(0), maxG(maxG), rotIncr(2),
+Figure3D::Figure3D(Spring ** springs, Mass ** masses, SpringMass * SM, int m, int n, double maxG):
+springs(springs), masses(masses), springmass(SM), m(m), n(n), dt(30), glSphere(0), maxG(maxG), rotIncr(2),
 moveIncr(0.2) {
 
   findCentroid();                                   // Find the intial value of the centroid and CE to be used
